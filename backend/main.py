@@ -17,28 +17,24 @@ ORIGINS = os.getenv("ORIGINS")
 scheduler = AsyncIOScheduler()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    '''
-    Начинает процессы фоновых задач.
+    # === before startup ===
 
-   Args:
-       app (FastAPI): приложение FastAPI.
-    '''
-    # === start ===
+
     if not scheduler.get_job('update_data_job'):
         scheduler.add_job(
             update_data,
-            trigger='interval',
-            seconds=20,# 86400
+            'interval',
+            seconds=300,
             id='update_data_job',
             replace_existing=True,
         )
-    # Запускаем планировщик, если ещё не запущен
+
     if not scheduler.running:
         scheduler.start()
 
-    yield  # здесь приложение работает
+    yield  # === здесь работает FastAPI ===
 
-    # === shutdown ===
+    # === on shutdown ===
     if scheduler.running:
         scheduler.shutdown()
 
